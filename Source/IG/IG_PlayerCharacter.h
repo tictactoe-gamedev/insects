@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "IG_EnemyCharacter.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "IG_PlayerCharacter.generated.h"
@@ -28,5 +29,15 @@ public:
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     float PlayerMoveSpeed;
-	
+
+    UFUNCTION(BlueprintCallable)
+	AIG_EnemyCharacter* DoHitDetection();
+
+    UFUNCTION(BlueprintCallable)
+    void ClearHitDetection();
+
+protected:
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    TArray<AActor*> ActorsToIgnore;
+
 };

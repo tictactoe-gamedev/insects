@@ -1,7 +1,9 @@
 // GPLv3
 
 
+
 #include "IG_PlayerCharacter.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 
 // Sets default values
@@ -33,3 +35,48 @@ void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 }
 
+AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
+
+    FVector start_location = GetMesh()->GetSocketLocation("Start");
+    FVector end_location = GetMesh()->GetSocketLocation("End");
+
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Reserve(1);
+    ObjectTypes.Emplace(ECollisionChannel::ECC_Pawn);
+
+    FHitResult HitResult = FHitResult(ForceInit);
+    bool hit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+            GetWorld(),
+            start_location,
+            end_location,
+            20.f,
+            ObjectTypes,
+            false,
+            ActorsToIgnore,
+            EDrawDebugTrace::Type::ForDuration,
+            HitResult,
+            true,
+            FLinearColor(255,0,0,255),
+            FLinearColor(0,255,0,255),
+            1.f
+            );
+
+    if (hit) {
+
+        UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
+
+        if (!ActorsToIgnore.Find(HitResult.GetActor())) {
+            ActorsToIgnore.AddUnique(HitResult.GetActor());
+            AIG_EnemyCharacter* enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
+
+            return enemy;
+        }
+    }
+
+    return nullptr;
+}
+
+void AIG_PlayerCharacter::ClearHitDetection() {
+    ActorsToIgnore.Empty();
+    ActorsToIgnore.Push(this);
+}
