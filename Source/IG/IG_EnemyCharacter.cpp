@@ -3,7 +3,8 @@
 #include <algorithm>
 #include "IG_EnemySpawner.h"
 #include "IG_EnemyCharacter.h"
-
+#include "IG_EnemyHealthBar.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AIG_EnemyCharacter::AIG_EnemyCharacter()
@@ -17,14 +18,28 @@ AIG_EnemyCharacter::AIG_EnemyCharacter()
 void AIG_EnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	HealthBarWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), HealthBarWidget);
+	HealthBarWidgetInstance->AddToViewport();
+	HealthBarWidgetInstance->SetDesiredSizeInViewport(FVector2d(100, 16));
 }
 
 // Called every frame
 void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	FVector2d screen_pos;
+	if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->ProjectWorldLocationToScreen(GetActorLocation(), screen_pos))
+	{
+		screen_pos.X -= 50;
+		screen_pos.Y -= 100;
+		HealthBarWidgetInstance->SetPositionInViewport(screen_pos);
+		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+	} else
+	{
+		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 // Called to bind functionality to input
@@ -39,6 +54,12 @@ float AIG_EnemyCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEv
 	UE_LOG(LogTemp, Warning, TEXT("Took damage: %.2f"), Damage);
 	int initial_health = CurrentHealth;
 	CurrentHealth = std::clamp(CurrentHealth - static_cast<int>(Damage), 0, MaxHealth);
+
+	if (HealthBarWidgetInstance)
+	{
+		Cast<UIG_EnemyHealthBar>(HealthBarWidgetInstance)->HealthBar->SetPercent(CurrentHealth / MaxHealth); 
+	}
+	
 	if (CurrentHealth == 0) {
 		Died();
 	}
@@ -47,6 +68,7 @@ float AIG_EnemyCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEv
 }
 
 void AIG_EnemyCharacter::Died() {
+	HealthBarWidgetInstance = nullptr;
 	spawner->CleanupEnemy(this);
 	K2_DestroyActor();
 }

@@ -40,4 +40,7 @@ public:
 	void Died();
 
 	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
+
+	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> HealthBarWidget;
+	UUserWidget* HealthBarWidgetInstance;
 };
