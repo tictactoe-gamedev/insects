@@ -27,23 +27,48 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	/**
+	 * The amount of damage the player will deal
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float PlayerDamage = 20.f;
+	
+	/**
+     * Movement speed of the player
+     */
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float PlayerMoveSpeed;
+    float PlayerMoveSpeed = 3.f;
 
-    UFUNCTION(BlueprintCallable)
+	/**
+	 * Run hit detection on the mace head
+	 * @return The enemy that was hit (or nullptr for no hit)
+	 */
+	UFUNCTION(BlueprintCallable)
 	AIG_EnemyCharacter* DoHitDetection();
 
-    UFUNCTION(BlueprintCallable)
+	/**
+	 * Clear contact history
+	 */
+	UFUNCTION(BlueprintCallable)
     void ClearHitDetection();
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int MaxHealth;
+	/**
+	 * Maximum health of the player
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    int MaxHealth = 100;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int CurrentHealth;
+	/**
+	 * Current health of the player
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    int CurrentHealth = 100;
 
 protected:
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	/**
+	 * Array of actors to ignore from hit detections
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     TArray<AActor*> ActorsToIgnore;
 
 };
