@@ -63,11 +63,10 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 
     if (hit) {
 
-        UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
-
         if (!ActorsToIgnore.Find(HitResult.GetActor())) {
             ActorsToIgnore.AddUnique(HitResult.GetActor());
             AIG_EnemyCharacter* enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
+            UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
 
             return enemy;
         }

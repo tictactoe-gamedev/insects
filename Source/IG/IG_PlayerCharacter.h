@@ -36,6 +36,12 @@ public:
     UFUNCTION(BlueprintCallable)
     void ClearHitDetection();
 
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    int MaxHealth;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    int CurrentHealth;
+
 protected:
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     TArray<AActor*> ActorsToIgnore;
