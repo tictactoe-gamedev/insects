@@ -1,6 +1,7 @@
 // GPLv3
 
-
+#include <algorithm>
+#include "IG_EnemySpawner.h"
 #include "IG_EnemyCharacter.h"
 
 
@@ -31,4 +32,21 @@ void AIG_EnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+float AIG_EnemyCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) {
+
+	UE_LOG(LogTemp, Warning, TEXT("Took damage: %.2f"), Damage);
+	int initial_health = CurrentHealth;
+	CurrentHealth = std::clamp(CurrentHealth - static_cast<int>(Damage), 0, MaxHealth);
+	if (CurrentHealth == 0) {
+		Died();
+	}
+
+	return (CurrentHealth - initial_health);
+}
+
+void AIG_EnemyCharacter::Died() {
+	spawner->CleanupEnemy(this);
+	K2_DestroyActor();
 }

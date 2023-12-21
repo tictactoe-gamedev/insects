@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "IG_EnemyCharacter.generated.h"
 
+class AIG_EnemySpawner;
+
 UCLASS()
 class IG_API AIG_EnemyCharacter : public ACharacter
 {
@@ -31,4 +33,11 @@ public:
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int CurrentHealth;
+
+	AIG_EnemySpawner* spawner;
+
+	UFUNCTION(BlueprintCallable)
+	void Died();
+
+	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
 };
