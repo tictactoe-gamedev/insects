@@ -64,6 +64,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int CurrentHealth = 100;
 
+	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
+
 protected:
 	/**
 	 * Array of actors to ignore from hit detections

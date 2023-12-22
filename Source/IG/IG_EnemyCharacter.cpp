@@ -3,12 +3,14 @@
 #include <algorithm>
 #include "IG_EnemySpawner.h"
 #include "IG_EnemyCharacter.h"
+#include "IG_PlayerCharacter.h"
 #include "IG_EnemyHealthBar.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
 #include "AIController.h"
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 AIG_EnemyCharacter::AIG_EnemyCharacter()
@@ -62,6 +64,19 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 			ai->RequestMove(req, path->GetPath());
 		}
 	}
+
+	if (FVector::Distance(GetActorLocation(), player->GetActorLocation()) <= ChaseStopDistance + 20.f)
+	{
+		if (CurrentAttackTime >= AttackTime)
+		{
+			Attack(Cast<AIG_PlayerCharacter>(player));
+			CurrentAttackTime = 0;
+		}
+		else
+		{
+			CurrentAttackTime += DeltaTime;
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -95,4 +110,13 @@ void AIG_EnemyCharacter::Died() {
 	HealthBarWidgetInstance = nullptr;
 	spawner->CleanupEnemy(this);
 	K2_DestroyActor();
+}
+
+void AIG_EnemyCharacter::Attack(AIG_PlayerCharacter* player)
+{
+	if (player)
+	{
+		FDamageEvent dev;
+		player->TakeDamage(AttackDamage, dev, GetController(), this);
+	}
 }

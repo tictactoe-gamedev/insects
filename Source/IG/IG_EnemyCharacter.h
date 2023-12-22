@@ -7,6 +7,7 @@
 #include "IG_EnemyCharacter.generated.h"
 
 class AIG_EnemySpawner;
+class AIG_PlayerCharacter;
 
 UCLASS()
 class IG_API AIG_EnemyCharacter : public ACharacter
@@ -42,8 +43,20 @@ public:
 	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
 
 	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> HealthBarWidget;
-	UUserWidget* HealthBarWidgetInstance;
+	UPROPERTY(EditAnywhere) UUserWidget* HealthBarWidgetInstance;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ChaseStopDistance = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AttackTime = 2.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CurrentAttackTime = AttackTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AttackDamage = 5.f;
+
+	UFUNCTION(BlueprintCallable)
+	void Attack(AIG_PlayerCharacter* player);
 };

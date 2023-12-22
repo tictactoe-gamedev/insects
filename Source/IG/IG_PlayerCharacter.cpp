@@ -3,6 +3,9 @@
 
 
 #include "IG_PlayerCharacter.h"
+#include "IG_GameMode.h"
+#include "IG_PlayerHealthBar.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 
@@ -82,4 +85,32 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 void AIG_PlayerCharacter::ClearHitDetection() {
     ActorsToIgnore.Empty();
     ActorsToIgnore.Push(this);
+}
+
+float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) {
+
+	UE_LOG(LogTemp, Warning, TEXT("Player took %.2f damage"), Damage);
+	int initial_health = CurrentHealth;
+	CurrentHealth = std::clamp(CurrentHealth - static_cast<int>(Damage), 0, MaxHealth);
+	
+	if (CurrentHealth == 0) {
+		UE_LOG(LogTemp, Warning, TEXT("Player died"), Damage);
+	}
+
+	AIG_GameMode* gamemode = Cast<AIG_GameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (gamemode)
+	{
+		auto healthbar = Cast<UIG_PlayerHealthBar>(gamemode->HealthBarWidgetInstance);
+		if (healthbar)
+		{
+			auto hba = healthbar->HealthBar;
+			if (hba)
+			{
+				float bar_percent = static_cast<float>(CurrentHealth) / static_cast<float>(MaxHealth);
+				hba->SetPercent(bar_percent);
+			}
+		}
+	}
+
+	return (CurrentHealth - initial_health);
 }
