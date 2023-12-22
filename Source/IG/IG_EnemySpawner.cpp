@@ -43,7 +43,7 @@ void AIG_EnemySpawner::Spawn() {
         FTransform spawn_transform = FTransform(FRotator(0.f), spawn_pos, FVector(1.f));
         FActorSpawnParameters spawn_info;
         AIG_EnemyCharacter* new_enemy = Cast<AIG_EnemyCharacter>(GetWorld()->SpawnActor(EnemyBase, &spawn_transform, spawn_info));
-        new_enemy->SpawnDefaultController();
+        //new_enemy->SpawnDefaultController();
         new_enemy->spawner = this;
         spawned_enemies.Push(new_enemy);
     }
