@@ -4,8 +4,11 @@
 #include "IG_EnemySpawner.h"
 #include "IG_EnemyCharacter.h"
 #include "IG_EnemyHealthBar.h"
+#include "NavigationSystem.h"
+#include "NavigationPath.h"
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
+#include "AIController.h"
 
 // Sets default values
 AIG_EnemyCharacter::AIG_EnemyCharacter()
@@ -29,9 +32,12 @@ void AIG_EnemyCharacter::BeginPlay()
 void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	auto player_controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	auto player = player_controller->GetPawn();
 	
 	FVector2d screen_pos;
-	if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->ProjectWorldLocationToScreen(GetActorLocation(), screen_pos))
+	if (player_controller->ProjectWorldLocationToScreen(GetActorLocation(), screen_pos))
 	{
 		screen_pos.X -= 50;
 		screen_pos.Y -= 100;
@@ -40,6 +46,21 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 	} else
 	{
 		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+	}
+	
+	UNavigationPath* path = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), GetActorLocation(), player->GetActorLocation(), this);
+
+	if (path && path->IsValid())
+	{
+		FAIMoveRequest req;
+		req.SetAcceptanceRadius(ChaseStopDistance);
+		req.SetUsePathfinding(true);
+
+		AAIController* ai = Cast<AAIController>(GetController());
+		if (ai)
+		{
+			ai->RequestMove(req, path->GetPath());
+		}
 	}
 }
 

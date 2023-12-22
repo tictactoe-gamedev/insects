@@ -43,4 +43,7 @@ public:
 
 	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> HealthBarWidget;
 	UUserWidget* HealthBarWidgetInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ChaseStopDistance = 100.f;
 };
