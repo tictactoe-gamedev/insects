@@ -4,6 +4,7 @@
 #include "IG_EnemySpawner.h"
 #include "IG_EnemyCharacter.h"
 #include "IG_EnemyHealthBar.h"
+#include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -57,7 +58,8 @@ float AIG_EnemyCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEv
 
 	if (HealthBarWidgetInstance)
 	{
-		Cast<UIG_EnemyHealthBar>(HealthBarWidgetInstance)->HealthBar->SetPercent(CurrentHealth / MaxHealth); 
+		float bar_percent = static_cast<float>(CurrentHealth) / static_cast<float>(MaxHealth);
+		Cast<UIG_EnemyHealthBar>(HealthBarWidgetInstance)->HealthBar->SetPercent(bar_percent); 
 	}
 	
 	if (CurrentHealth == 0) {
@@ -68,6 +70,7 @@ float AIG_EnemyCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEv
 }
 
 void AIG_EnemyCharacter::Died() {
+	HealthBarWidgetInstance->RemoveFromParent();
 	HealthBarWidgetInstance = nullptr;
 	spawner->CleanupEnemy(this);
 	K2_DestroyActor();

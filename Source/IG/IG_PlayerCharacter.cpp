@@ -61,15 +61,20 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
             1.f
             );
 
-    if (hit) {
+    if (hit)
+    {
+    	//auto hit_guid = HitResult.GetActor()->GetActorGuid();
+    	auto hit_actor = HitResult.GetActor();
+    	
+    	if (ActorsToIgnore.Find(hit_actor) == INDEX_NONE)
+    	{
+    		ActorsToIgnore.AddUnique(HitResult.GetActor());
+    		AIG_EnemyCharacter* enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
+    		UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
 
-//        if (!ActorsToIgnore.Find(HitResult.GetActor())) {
-//            ActorsToIgnore.AddUnique(HitResult.GetActor());
-            AIG_EnemyCharacter* enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
-//            UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
-
-            return enemy;
-        }
+    		return enemy;
+    	}
+    }
 
     return nullptr;
 }
