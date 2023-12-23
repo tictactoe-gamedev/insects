@@ -83,4 +83,8 @@ DerivedDataCache/*
 # VSCode settings
 .vscode/
 
+# Linux based build things
 CMakeLists.txt
+
+# Rider/CLion default build directories
+cmake-build*/
