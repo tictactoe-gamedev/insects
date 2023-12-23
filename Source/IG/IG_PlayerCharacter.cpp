@@ -5,9 +5,9 @@
 #include "IG_PlayerCharacter.h"
 #include "IG_GameMode.h"
 #include "IG_PlayerHealthBar.h"
+#include "IG_PlayerHud.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
@@ -115,10 +115,10 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 	}
 
 	// Grab the healbar from the gamemode
-	AIG_GameMode* gamemode = Cast<AIG_GameMode>(UGameplayStatics::GetGameMode(GetWorld()));
-	if (gamemode)
+	AIG_PlayerHud* hud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
+	if (hud)
 	{
-		auto healthbar = Cast<UIG_PlayerHealthBar>(gamemode->HealthBarWidgetInstance);
+		auto healthbar = Cast<UIG_PlayerHealthBar>(hud->HealthBarWidgetInstance);
 		if (healthbar)
 		{
 			// Calc and send the new percentage to the health bar
