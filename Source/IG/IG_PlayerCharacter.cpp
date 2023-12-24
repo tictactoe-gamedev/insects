@@ -3,9 +3,9 @@
 
 
 #include "IG_PlayerCharacter.h"
-#include "IG_GameMode.h"
 #include "IG_PlayerHealthBar.h"
 #include "IG_PlayerHud.h"
+#include "Evaluation/Blending/MovieSceneBlendType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -40,9 +40,23 @@ void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 
-	// Grab start and end locations fom the mesh sockets
-    FVector start_location = GetMesh()->GetSocketLocation("Start");
-    FVector end_location = GetMesh()->GetSocketLocation("End");
+	FVector start_location;
+	FVector end_location;
+
+	TArray<USkeletalMeshComponent*> components;
+	GetComponents<USkeletalMeshComponent>(components, true);
+	
+	for (USkeletalMeshComponent * Comp : components)
+	{
+		if (Comp->GetFName() == FName("sword"))
+		{
+			start_location =  Comp->GetSocketLocation("WeaponStart");
+			end_location = Comp->GetSocketLocation("WeaponEnd");
+			break;
+		}
+	}
+	
+    
 
 	// Generate array of object types to hit
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -59,7 +73,7 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
             ObjectTypes,
             false,
             ActorsToIgnore,		// Our dynamic ignore list
-            EDrawDebugTrace::Type::ForDuration,
+            EDrawDebugTrace::Type::None, // ForDuration
             HitResult,
             true,
             FLinearColor(255,0,0,255),
