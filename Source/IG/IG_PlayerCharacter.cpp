@@ -21,7 +21,7 @@ void AIG_PlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Configure the player input mapping
-	auto PlayerController = Cast<APlayerController>(GetController());
+	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
 		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
@@ -46,6 +46,13 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FHitResult HitResult;
+	PlayerController->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), false, HitResult);
+
+	if (HitResult.IsValidBlockingHit())
+	{
+		PlayerController->SetControlRotation((HitResult.ImpactPoint - GetActorLocation()).Rotation());		
+	}
 }
 
 // Called to bind functionality to input

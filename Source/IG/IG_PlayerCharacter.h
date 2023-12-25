@@ -80,4 +80,6 @@ protected:
     TArray<AActor*> ActorsToIgnore;
 
 	void OnMove(const FInputActionValue& Value);
+
+	APlayerController* PlayerController{nullptr};
 };
