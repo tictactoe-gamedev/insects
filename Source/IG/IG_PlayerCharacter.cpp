@@ -1,13 +1,11 @@
 // GPLv3
 
-
-
 #include "IG_PlayerCharacter.h"
 #include "IG_PlayerHealthBar.h"
 #include "IG_PlayerHud.h"
-#include "Evaluation/Blending/MovieSceneBlendType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "EnhancedInputComponent.h"
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
@@ -21,7 +19,26 @@ AIG_PlayerCharacter::AIG_PlayerCharacter()
 void AIG_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// Configure the player input mapping
+	auto PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+		if (Subsystem)
+		{
+			// Assign input map
+			Subsystem->AddMappingContext(InputContext, 0);
+		}
+		else
+		{
+			UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire local player input subsystem"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire player controller"));
+	}
 }
 
 // Called every frame
@@ -35,7 +52,12 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	
+	auto EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+	if (EnhancedInputComponent)
+	{
+		EnhancedInputComponent->BindAction(InputActionMove, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnMove);
+	}
 }
 
 AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
@@ -55,8 +77,6 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 			break;
 		}
 	}
-	
-    
 
 	// Generate array of object types to hit
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -142,4 +162,20 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 	}
 
 	return (CurrentHealth - initial_health);
+}
+
+void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
+{
+	// Get the movement vector from the action
+	FVector MoveVector = Value.Get<FVector>();
+
+	// Attempt to normalize
+	if (MoveVector.Normalize())
+	{
+		AddMovementInput(MoveVector, PlayerMoveSpeedModifier);
+	}
+	else
+	{
+		UE_LOG(LogPlayerController, Warning, TEXT("Failed normalize movement"));
+	}
 }

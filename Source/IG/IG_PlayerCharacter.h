@@ -5,6 +5,7 @@
 #include "IG_EnemyCharacter.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "EnhancedInputSubsystems.h"
 #include "IG_PlayerCharacter.generated.h"
 
 UCLASS()
@@ -37,7 +38,7 @@ public:
      * Movement speed of the player
      */
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float PlayerMoveSpeed = 3.f;
+    float PlayerMoveSpeedModifier = 1.f;
 
 	/**
 	 * Run hit detection on the mace head
@@ -66,6 +67,11 @@ public:
 
 	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UInputMappingContext* InputContext{nullptr};
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UInputAction* InputActionMove{nullptr};
 protected:
 	/**
 	 * Array of actors to ignore from hit detections
@@ -73,4 +79,5 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     TArray<AActor*> ActorsToIgnore;
 
+	void OnMove(const FInputActionValue& Value);
 };
