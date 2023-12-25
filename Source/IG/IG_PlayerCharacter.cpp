@@ -20,7 +20,7 @@ void AIG_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Configure the player input mapping
+	// Configure the player controller
 	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
@@ -34,6 +34,9 @@ void AIG_PlayerCharacter::BeginPlay()
 		{
 			UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire local player input subsystem"));
 		}
+
+		// Enable mouse cursor
+		PlayerController->SetShowMouseCursor(true);
 	}
 	else
 	{
