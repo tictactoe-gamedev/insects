@@ -4,6 +4,7 @@
 
 #include "IG_EnemyCharacter.h"
 #include "CoreMinimal.h"
+#include "IG_GameMode.h"
 #include "GameFramework/Character.h"
 #include "IG_PlayerCharacter.generated.h"
 
@@ -73,4 +74,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     TArray<AActor*> ActorsToIgnore;
 
+	UPROPERTY()
+	TObjectPtr<AIG_GameMode> GameMode;
+
+	void OnPlayerMoveAction(const FInputActionInstance& Instance);
+	void OnPlayerAttackAction(const FInputActionInstance& Instance);
 };

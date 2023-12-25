@@ -1,27 +1,24 @@
 // GPLv3
 
-
-
 #include "IG_PlayerCharacter.h"
 #include "IG_PlayerHealthBar.h"
 #include "IG_PlayerHud.h"
-#include "Evaluation/Blending/MovieSceneBlendType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "EnhancedInputComponent.h"
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 }
 
 // Called when the game starts or when spawned
 void AIG_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -35,7 +32,18 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	
+	/* Binding Input Actions to Character */
+	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	
+	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	checkf(GameMode, TEXT("GameMode not found!"));
 
+	Input->BindAction(
+		GameMode->GetMoveAction(),ETriggerEvent::Triggered,this,&AIG_PlayerCharacter::OnPlayerMoveAction);
+
+	Input->BindAction(
+		GameMode->GetMoveAction(),ETriggerEvent::Triggered,this,&AIG_PlayerCharacter::OnPlayerAttackAction); 
 }
 
 AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
@@ -55,8 +63,6 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 			break;
 		}
 	}
-	
-    
 
 	// Generate array of object types to hit
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -142,4 +148,17 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 	}
 
 	return (CurrentHealth - initial_health);
+}
+
+void AIG_PlayerCharacter::OnPlayerMoveAction(const FInputActionInstance& Instance)
+{
+	const FVector2d vectorValue = Instance.GetValue().Get<FVector2d>();
+
+	UE_LOG(LogTemp,Warning,TEXT("%f %f %f"),vectorValue);
+}
+
+void AIG_PlayerCharacter::OnPlayerAttackAction(const FInputActionInstance& Instance)
+{
+	//TODO: Things to do on Attack
+	UE_LOG(LogTemp, Warning, TEXT("Attack!"));
 }
