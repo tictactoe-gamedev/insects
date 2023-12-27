@@ -5,6 +5,7 @@
 #include "IG_EnemyCharacter.h"
 #include "IG_PlayerCharacter.h"
 #include "IG_EnemyHealthBar.h"
+#include "IG_GameMode.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 #include "Blueprint/WidgetTree.h"
@@ -36,6 +37,13 @@ void AIG_EnemyCharacter::BeginPlay()
 void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Early return if player is dead
+	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	if (!GameMode->IsPlayerAlive())
+	{
+		return;
+	}
 
 	// If dead, decrement removal countdown
 	if (CurrentHealth <= 0)
@@ -159,6 +167,10 @@ void AIG_EnemyCharacter::Died() {
 	auto capsule = GetComponentByClass<UCapsuleComponent>();
 	capsule->SetSimulatePhysics(false);
 	capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Increment player score in gamemode
+	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	GameMode->IncrementScore();
 
 	// enemy will be removed at the end of the death timer
 }

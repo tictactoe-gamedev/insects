@@ -18,6 +18,8 @@ public:
 	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> HealthBarWidget;
 	UPROPERTY(EditAnywhere) UUserWidget* HealthBarWidgetInstance;
 
+	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> ScoreWidget;
+	UPROPERTY(EditAnywhere) UUserWidget* ScoreWidgetInstance;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

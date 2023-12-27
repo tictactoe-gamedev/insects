@@ -10,4 +10,7 @@ void AIG_PlayerHud::BeginPlay()
 
 	HealthBarWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), HealthBarWidget);
 	HealthBarWidgetInstance->AddToViewport();
+
+	ScoreWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), ScoreWidget);
+	ScoreWidgetInstance->AddToViewport();
 }

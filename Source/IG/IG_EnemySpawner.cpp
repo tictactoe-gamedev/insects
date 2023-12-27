@@ -4,7 +4,7 @@
 #include "Engine/World.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "IG_EnemySpawner.h"
-
+#include "IG_GameMode.h"
 
 // Sets default values
 AIG_EnemySpawner::AIG_EnemySpawner()
@@ -28,12 +28,16 @@ void AIG_EnemySpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    if (SpawnTimeCurrent > SpawnTimer) {
-        Spawn();
-        SpawnTimeCurrent = 0;
-    } else {
-        SpawnTimeCurrent += DeltaTime;
-    }
+	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode->IsPlayerAlive())
+	{
+		if (SpawnTimeCurrent > SpawnTimer) {
+			Spawn();
+			SpawnTimeCurrent = 0;
+		} else {
+			SpawnTimeCurrent += DeltaTime;
+		}
+	}
 }
 
 void AIG_EnemySpawner::Spawn() {
@@ -43,7 +47,7 @@ void AIG_EnemySpawner::Spawn() {
         FTransform spawn_transform = FTransform(FRotator(0.f), spawn_pos, FVector(1.f));
         FActorSpawnParameters spawn_info;
         AIG_EnemyCharacter* new_enemy = Cast<AIG_EnemyCharacter>(GetWorld()->SpawnActor(EnemyBase, &spawn_transform, spawn_info));
-        //new_enemy->SpawnDefaultController();
+        
         new_enemy->spawner = this;
         spawned_enemies.Push(new_enemy);
     }
