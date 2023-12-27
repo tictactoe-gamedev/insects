@@ -38,7 +38,7 @@ public:
      * Movement speed of the player
      */
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float PlayerMoveSpeedModifier = 1.f;
+    float DefaultPlayerMoveSpeed = 0.0f;
 
 	/**
 	 * Run hit detection on the mace head
@@ -69,6 +69,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	bool Dead = false;
 
+	// Multiplier for sprint speed
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float SprintModifier = 2.0f;
+
 	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -76,6 +80,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UInputAction* InputActionMove{nullptr};
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UInputAction* InputActionSprint{nullptr};
 protected:
 	/**
 	 * Array of actors to ignore from hit detections
@@ -84,6 +91,8 @@ protected:
     TArray<AActor*> ActorsToIgnore;
 
 	void OnMove(const FInputActionValue& Value);
+	void OnSprintStart(const FInputActionValue& Value);
+	void OnSprintEnd(const FInputActionValue& Value);
 
 	APlayerController* PlayerController{nullptr};
 };

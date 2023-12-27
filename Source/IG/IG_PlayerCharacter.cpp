@@ -7,6 +7,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "IG_GameMode.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
@@ -38,6 +39,7 @@ void AIG_PlayerCharacter::BeginPlay()
 
 		// Enable mouse cursor
 		PlayerController->SetShowMouseCursor(true);
+		DefaultPlayerMoveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	}
 	else
 	{
@@ -73,6 +75,8 @@ void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	if (EnhancedInputComponent)
 	{
 		EnhancedInputComponent->BindAction(InputActionMove, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnMove);
+		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnSprintStart);
+		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Completed, this, &AIG_PlayerCharacter::OnSprintEnd);
 	}
 }
 
@@ -197,10 +201,22 @@ void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 	// Attempt to normalize
 	if (MoveVector.Normalize())
 	{
-		AddMovementInput(MoveVector, PlayerMoveSpeedModifier);
+		AddMovementInput(MoveVector, 1.f);
 	}
 	else
 	{
 		UE_LOG(LogPlayerController, Warning, TEXT("Failed normalize movement"));
 	}
+}
+
+void AIG_PlayerCharacter::OnSprintStart(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Sprint start"));
+	GetCharacterMovement()->MaxWalkSpeed = DefaultPlayerMoveSpeed * SprintModifier;
+}
+
+void AIG_PlayerCharacter::OnSprintEnd(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Sprint end"));
+	GetCharacterMovement()->MaxWalkSpeed = DefaultPlayerMoveSpeed;
 }
