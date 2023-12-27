@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "IG_GameMode.h"
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
@@ -49,6 +50,11 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (Dead)
+	{
+		return;
+	}
+	
 	FHitResult HitResult;
 	PlayerController->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), false, HitResult);
 
@@ -156,6 +162,10 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 	// Don't kill the player, just print a message
 	if (CurrentHealth == 0) {
 		UE_LOG(LogTemp, Warning, TEXT("Player died"), Damage);
+		Dead = true;
+
+		// TODO: inform the gamemode that it's a gameover
+		//auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
 	}
 
 	// Grab the healbar from the gamemode
@@ -176,6 +186,11 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 
 void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 {
+	if (Dead)
+	{
+		return;
+	}
+	
 	// Get the movement vector from the action
 	FVector MoveVector = Value.Get<FVector>();
 

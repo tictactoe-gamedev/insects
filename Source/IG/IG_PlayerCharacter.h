@@ -65,6 +65,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int CurrentHealth = 100;
 
+	// Player is dead
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	bool Dead = false;
+
 	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
