@@ -38,13 +38,6 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Early return if player is dead
-	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
-	if (!GameMode->IsPlayerAlive())
-	{
-		return;
-	}
-
 	// If dead, decrement removal countdown
 	if (CurrentHealth <= 0)
 	{
@@ -79,6 +72,13 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 		{
 			// Hide the health bar if enemy is off-screen
 			HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		// Early return if player is dead
+		auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+		if (GameMode->GetGameOver())
+		{
+			return;
 		}
 
 		// Calculate path to the player. TODO probably can cache this for better performance

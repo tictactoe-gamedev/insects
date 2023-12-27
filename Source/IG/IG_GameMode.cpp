@@ -30,17 +30,23 @@ int AIG_GameMode::GetPlayerScore()
 	return PlayerScore;
 }
 
-bool AIG_GameMode::IsPlayerAlive()
+void AIG_GameMode::RestartGame()
 {
-	auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (PlayerController)
-	{
-		auto Player = Cast<AIG_PlayerCharacter>(PlayerController->GetPawn());
-		if (Player)
-		{
-			return Player->CurrentHealth > 0;
-		}
-	}
+	UE_LOG(LogGameMode, Warning, TEXT("Restarting game...."));
+	UGameplayStatics::OpenLevel(GetWorld(), "Test1");
+}
 
-	return false;
+void AIG_GameMode::SetGameOver()
+{
+	GameOver = true;
+	AIG_PlayerHud* hud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
+	if (hud)
+	{
+		hud->ShowRestartButton();
+	}
+}
+
+bool AIG_GameMode::GetGameOver()
+{
+	return GameOver;
 }

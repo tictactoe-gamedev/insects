@@ -24,10 +24,20 @@ public:
 	int GetPlayerScore();
 
 	UFUNCTION(BlueprintCallable)
-	bool IsPlayerAlive();
-	
+	void RestartGame();
+
+	UFUNCTION(BlueprintCallable)
+	void SetGameOver();
+
+	UFUNCTION(BlueprintCallable)
+	bool GetGameOver();
+
 protected:
 	// Incremented once for every enemy killed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int PlayerScore = 0;
+
+	// Track if gameover has occurred
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool GameOver = false;
 };

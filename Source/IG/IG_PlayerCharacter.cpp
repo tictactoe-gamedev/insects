@@ -169,7 +169,8 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 		Dead = true;
 
 		// TODO: inform the gamemode that it's a gameover
-		//auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+		auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+		GameMode->SetGameOver();
 	}
 
 	// Grab the healbar from the gamemode

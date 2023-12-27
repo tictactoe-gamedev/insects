@@ -14,3 +14,9 @@ void AIG_PlayerHud::BeginPlay()
 	ScoreWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), ScoreWidget);
 	ScoreWidgetInstance->AddToViewport();
 }
+
+void AIG_PlayerHud::ShowRestartButton()
+{
+	RestartButtonInstance = CreateWidget<UUserWidget>(GetWorld(), RestartButtonWidget);
+	RestartButtonInstance->AddToViewport();
+}

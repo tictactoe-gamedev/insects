@@ -29,7 +29,7 @@ void AIG_EnemySpawner::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
-	if (GameMode->IsPlayerAlive())
+	if (!GameMode->GetGameOver())
 	{
 		if (SpawnTimeCurrent > SpawnTimer) {
 			Spawn();

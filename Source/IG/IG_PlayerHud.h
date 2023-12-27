@@ -20,6 +20,13 @@ public:
 
 	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> ScoreWidget;
 	UPROPERTY(EditAnywhere) UUserWidget* ScoreWidgetInstance;
+
+	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> RestartButtonWidget;
+	UPROPERTY(EditAnywhere) UUserWidget* RestartButtonInstance;
+
+	UFUNCTION(BlueprintCallable)
+	void ShowRestartButton();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
