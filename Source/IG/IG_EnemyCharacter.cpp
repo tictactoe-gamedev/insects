@@ -10,6 +10,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
 #include "AIController.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 
 // Sets default values
@@ -36,60 +37,75 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Grab references. TODO move these to call members for resuability
-	auto player_controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	auto player = player_controller->GetPawn();
-	
-	FVector2d screen_pos;
-
-	// Check if we can project to the screen (only works if enemy is within camera view)
-	if (player_controller->ProjectWorldLocationToScreen(GetActorLocation(), screen_pos))
+	// If dead, decrement removal countdown
+	if (CurrentHealth <= 0)
 	{
-		// Adjust offset to place health bar above enemies' head
-		screen_pos.X -= 50;
-		screen_pos.Y -= 100;
-		HealthBarWidgetInstance->SetPositionInViewport(screen_pos);
-		
-		// Make sure the health bar is visible 
-		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Visible);
-	} else
-	{
-		// Hide the health bar if enemy is off-screen
-		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
-	}
-
-	// Calculate path to the player. TODO probably can cache this for better performance
-	UNavigationPath* path = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), GetActorLocation(), player->GetActorLocation(), this);
-
-	// If the path is valid
-	if (path && path->IsValid())
-	{
-		// Configure settings for movement requset
-		FAIMoveRequest req;
-		req.SetAcceptanceRadius(ChaseStopDistance); // Apply chase stop distance var
-		req.SetUsePathfinding(true);
-
-		AAIController* ai = Cast<AAIController>(GetController());
-		if (ai)
+		if (DeathRemovalTime > 0.f)
 		{
-			// Apple the movement request
-			ai->RequestMove(req, path->GetPath());
-		}
-	}
-
-	// Check if the enemy is within attack range of the player
-	if (FVector::Distance(GetActorLocation(), player->GetActorLocation()) <= AttackRange)
-	{
-		if (CurrentAttackTime >= AttackTime)
-		{
-			// Attack the player
-			Attack(Cast<AIG_PlayerCharacter>(player));
-			CurrentAttackTime = 0;
+			DeathRemovalTime -= DeltaTime;			
 		}
 		else
 		{
-			// Wait for the attack cooldown timer
-			CurrentAttackTime += DeltaTime;
+			K2_DestroyActor();
+		}
+	}
+	else
+	{
+		// Grab references. TODO move these to call members for resuability
+		auto player_controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		auto player = player_controller->GetPawn();
+	
+		FVector2d screen_pos;
+
+		// Check if we can project to the screen (only works if enemy is within camera view)
+		if (player_controller->ProjectWorldLocationToScreen(GetActorLocation(), screen_pos))
+		{
+			// Adjust offset to place health bar above enemies' head
+			screen_pos.X -= 50;
+			screen_pos.Y -= 100;
+			HealthBarWidgetInstance->SetPositionInViewport(screen_pos);
+		
+			// Make sure the health bar is visible 
+			HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+		} else
+		{
+			// Hide the health bar if enemy is off-screen
+			HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		// Calculate path to the player. TODO probably can cache this for better performance
+		UNavigationPath* path = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), GetActorLocation(), player->GetActorLocation(), this);
+
+		// If the path is valid
+		if (path && path->IsValid())
+		{
+			// Configure settings for movement requset
+			FAIMoveRequest req;
+			req.SetAcceptanceRadius(ChaseStopDistance); // Apply chase stop distance var
+			req.SetUsePathfinding(true);
+
+			AAIController* ai = Cast<AAIController>(GetController());
+			if (ai)
+			{
+				// Apple the movement request
+				ai->RequestMove(req, path->GetPath());
+			}
+		}
+
+		// Check if the enemy is within attack range of the player
+		if (FVector::Distance(GetActorLocation(), player->GetActorLocation()) <= AttackRange)
+		{
+			if (CurrentAttackTime >= AttackTime)
+			{
+				// Attack the player
+				Attack(Cast<AIG_PlayerCharacter>(player));
+				CurrentAttackTime = 0;
+			}
+			else
+			{
+				// Wait for the attack cooldown timer
+				CurrentAttackTime += DeltaTime;
+			}
 		}
 	}
 }
@@ -139,8 +155,12 @@ void AIG_EnemyCharacter::Died() {
 	// Ask the spawner to clean up its lists
 	spawner->CleanupEnemy(this);
 
-	// Destroy ourselves
-	K2_DestroyActor();
+	// Disable physics & collision
+	auto capsule = GetComponentByClass<UCapsuleComponent>();
+	capsule->SetSimulatePhysics(false);
+	capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// enemy will be removed at the end of the death timer
 }
 
 void AIG_EnemyCharacter::Attack(AIG_PlayerCharacter* player)

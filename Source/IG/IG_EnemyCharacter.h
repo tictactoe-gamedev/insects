@@ -75,4 +75,8 @@ public:
 	// How much damage the enemy does per attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float AttackDamage = 5.f;
+
+	// Timer for removal on death
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DeathRemovalTime = 3.f;
 };
