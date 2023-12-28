@@ -2,10 +2,9 @@
 
 
 #include "IG_GameMode.h"
+#include "Player/IG_PlayerScoreWidget.h"
+#include "Player/IG_PlayerHud.h"
 
-#include "IG_PlayerCharacter.h"
-#include "IG_PlayerScoreWidget.h"
-#include "IG_PlayerHud.h"
 #include "Kismet/GameplayStatics.h"
 
 void AIG_GameMode::IncrementScore()

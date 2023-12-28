@@ -1,10 +1,11 @@
 // GPLv3
 
+#include "IG_EnemySpawner.h"
+#include "../IG_GameMode.h"
+
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "IG_EnemySpawner.h"
-#include "IG_GameMode.h"
 
 // Sets default values
 AIG_EnemySpawner::AIG_EnemySpawner()
