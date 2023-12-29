@@ -83,6 +83,14 @@ protected:
 	// Timer for removal on death
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float DeathRemovalTime = 3.f;
+
+	// Callback for player death event
+	UFUNCTION()
+	void OnPlayerDeath()
+	{
+		// Deactivate ourselves
+		SetActorTickEnabled(false);
+	}
 	
 public:	
 	// Called every frame

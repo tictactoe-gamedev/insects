@@ -2,9 +2,11 @@
 
 #include "IG_EnemySpawner.h"
 #include "../IG_GameMode.h"
+#include "../Player/IG_PlayerCharacter.h"
 
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
@@ -28,25 +30,27 @@ void AIG_EnemySpawner::BeginPlay()
 
 	// Cache frequent flyers
 	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	const auto PlayerPawn = PlayerController->GetPawn();
+	const auto PlayerCharacter = Cast<AIG_PlayerCharacter>(PlayerPawn);
+
+	// Subscribe to player death event
+	PlayerCharacter->OnPlayerDeathDelegate.AddDynamic(this, &AIG_EnemySpawner::OnPlayerDeath);
 }
 
 // Called every frame
 void AIG_EnemySpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	// Skip if it's game over
-	if (!GameMode->GetGameOver())
-	{
-		// Check the spawn timer
-		if (SpawnTimeCurrent > SpawnTimer) {
-			// Spawn enemy & reset timer
-			Spawn();
-			SpawnTimeCurrent = 0;
-		} else {
-			// Advance the timer
-			SpawnTimeCurrent += DeltaTime;
-		}
+	
+	// Check the spawn timer
+	if (SpawnTimeCurrent > SpawnTimer) {
+		// Spawn enemy & reset timer
+		Spawn();
+		SpawnTimeCurrent = 0;
+	} else {
+		// Advance the timer
+		SpawnTimeCurrent += DeltaTime;
 	}
 }
 

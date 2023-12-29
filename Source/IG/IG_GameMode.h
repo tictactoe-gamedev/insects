@@ -31,16 +31,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RestartGame();
 
-	// Register a gameover
-	UFUNCTION(BlueprintCallable)
-	void SetGameOver();
-
 	// Check if gameover is set
 	UFUNCTION(BlueprintCallable)
-	bool GetGameOver()
+	bool IsGameOver()
 	{
 		return GameOver;
 	}
+
+	// Callback for player death delegate
+	UFUNCTION()
+	void PlayerDied();
 
 protected:
 	// Incremented once for every enemy killed

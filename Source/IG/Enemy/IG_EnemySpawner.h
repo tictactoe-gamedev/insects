@@ -63,4 +63,12 @@ protected:
 
 	// Cached vars
 	TObjectPtr<AIG_GameMode> GameMode{nullptr};
+
+	// Callback for player death event
+	UFUNCTION()
+	void OnPlayerDeath()
+	{
+		// Deactivate ourselves
+		SetActorTickEnabled(false);
+	}
 };

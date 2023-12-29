@@ -39,6 +39,9 @@ void AIG_EnemyCharacter::BeginPlay()
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	PlayerPawn = PlayerController->GetPawn();
 	PlayerCharacter = Cast<AIG_PlayerCharacter>(PlayerPawn);
+
+	// Subscribe to player death event
+	PlayerCharacter->OnPlayerDeathDelegate.AddDynamic(this, &AIG_EnemyCharacter::OnPlayerDeath);
 }
 
 // Called every frame
@@ -77,13 +80,7 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 		// Hide the health bar if enemy is off-screen
 		HealthBarWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 	}
-
-	// Early return if player is dead
-	if (GameMode->GetGameOver())
-	{
-		return;
-	}
-
+	
 	// Refresh player location
 	PlayerLocation = PlayerPawn->GetActorLocation();
 	

@@ -12,6 +12,8 @@
 class UIG_PlayerHealthBar;
 class AIG_PlayerHud;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDeath);
+
 UCLASS()
 class IG_API AIG_PlayerCharacter : public ACharacter
 {
@@ -29,6 +31,9 @@ public:
 
 	// Callback for receiving damage
 	virtual float TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) override;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerDeath OnPlayerDeathDelegate;
 
 protected:
 	// Called when the game starts or when spawned
@@ -120,5 +125,4 @@ protected:
 	TObjectPtr<AIG_PlayerHud>			PlayerHud{nullptr};
 	TObjectPtr<UIG_PlayerHealthBar>		PlayerHealthBar{nullptr};
 	TObjectPtr<UAnimInstance>			PlayerAnimator{nullptr};
-
 };

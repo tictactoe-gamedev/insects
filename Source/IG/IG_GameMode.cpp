@@ -4,13 +4,19 @@
 #include "IG_GameMode.h"
 #include "Player/IG_PlayerScoreWidget.h"
 #include "Player/IG_PlayerHud.h"
+#include "Player/IG_PlayerCharacter.h"
 
 #include "Kismet/GameplayStatics.h"
 
 void AIG_GameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
 	
+	const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	const auto PlayerPawn = PlayerController->GetPawn();
+	const auto PlayerCharacter = Cast<AIG_PlayerCharacter>(PlayerPawn);
+	PlayerCharacter->OnPlayerDeathDelegate.AddDynamic(this, &AIG_GameMode::PlayerDied);
 }
 
 void AIG_GameMode::IncrementScore()
@@ -36,15 +42,15 @@ void AIG_GameMode::RestartGame()
 	UGameplayStatics::OpenLevel(GetWorld(), "Test1");
 }
 
-void AIG_GameMode::SetGameOver()
-{
-	// Register the gameover state
-	GameOver = true;
-	PlayerHud->ShowRestartButton();
-}
-
 void AIG_GameMode::HudReady()
 {
 	PlayerHud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
 	ScoreWidget = Cast<UIG_PlayerScoreWidget>(PlayerHud->ScoreWidgetInstance);
+}
+
+void AIG_GameMode::PlayerDied()
+{
+	// Register the gameover state
+	GameOver = true;
+	PlayerHud->ShowRestartButton();
 }

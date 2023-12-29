@@ -205,8 +205,9 @@ float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const & D
 		UE_LOG(LogTemp, Warning, TEXT("Player died"), Damage);
 		Dead = true;
 
-		// inform the gamemode that it's a gameover
-		GameMode->SetGameOver();
+		// broadcast to delegates that we died
+		OnPlayerDeathDelegate.Broadcast();
+		
 	}
 	
 	// Calc and send the new percentage to the health bar
