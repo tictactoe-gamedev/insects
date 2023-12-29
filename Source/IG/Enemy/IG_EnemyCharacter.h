@@ -10,6 +10,8 @@ class AIG_GameMode;
 class AIG_EnemySpawner;
 class AIG_PlayerCharacter;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, AIG_EnemyCharacter*, Enemy);
+
 UCLASS()
 class IG_API AIG_EnemyCharacter : public ACharacter
 {
@@ -18,6 +20,10 @@ class IG_API AIG_EnemyCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AIG_EnemyCharacter();
+
+	// Enemy death delegate
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyDeath OnEnemyDeathDelegate;
 
 protected:
 	// Called when the game starts or when spawned
@@ -52,9 +58,6 @@ protected:
 	// Current enemy health
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int CurrentHealth{100};
-
-	// The spawner responsible for this enemy
-	TObjectPtr<AIG_EnemySpawner> ParentSpawner;
 
 	// The health bar UI BP to use
 	UPROPERTY(EditAnywhere)
@@ -91,6 +94,13 @@ protected:
 		// Deactivate ourselves
 		SetActorTickEnabled(false);
 	}
+
+	// Callback to remove the corpse
+	UFUNCTION()
+	void OnCorpseRemovalTimer()
+	{
+		K2_DestroyActor();
+	}
 	
 public:	
 	// Called every frame
@@ -101,10 +111,4 @@ public:
 	
 	// Causes the enemy to take damage
 	virtual float TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) override;
-
-	// Allow the spawner to let the enemy know who it is
-	void SetParentSpawner(AIG_EnemySpawner* Spawner)
-	{
-		ParentSpawner = Spawner;
-	}
 };

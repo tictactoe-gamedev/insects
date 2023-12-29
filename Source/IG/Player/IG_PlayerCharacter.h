@@ -31,7 +31,7 @@ public:
 
 	// Callback for receiving damage
 	virtual float TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) override;
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerDeath OnPlayerDeathDelegate;
 

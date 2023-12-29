@@ -1,7 +1,6 @@
 // GPLv3
 
 #include "IG_EnemyCharacter.h"
-#include "IG_EnemySpawner.h"
 #include "IG_EnemyHealthBar.h"
 #include "../IG_GameMode.h"
 #include "../Player/IG_PlayerCharacter.h"
@@ -48,21 +47,6 @@ void AIG_EnemyCharacter::BeginPlay()
 void AIG_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	// If dead, decrement removal countdown
-	if (CurrentHealth <= 0)
-	{
-		if (DeathRemovalTime > 0.f)
-		{
-			DeathRemovalTime -= DeltaTime;			
-		}
-		else
-		{
-			K2_DestroyActor();
-		}
-
-		return;
-	}
 
 	// TODO: get the enemy health bar to work as a child of the enemy
 	// Check if we can project to the screen (only works if enemy is within camera view)
@@ -149,8 +133,11 @@ void AIG_EnemyCharacter::Died() {
 	// Null out the pointer just in case it still gets ref-counted
 	HealthBarWidgetInstance = nullptr;
 
-	// Ask the spawner to clean up its lists
-	ParentSpawner->CleanupEnemy(this);
+	// Broadcast death event
+	OnEnemyDeathDelegate.Broadcast(this);
+
+	// Deactivate ourselves
+	SetActorTickEnabled(false);
 
 	// Disable physics & collision
 	const auto Capsule = GetComponentByClass<UCapsuleComponent>();
@@ -160,7 +147,15 @@ void AIG_EnemyCharacter::Died() {
 	// Increment player score in gamemode
 	GameMode->IncrementScore();
 
-	// enemy will be removed at the end of the death timer
+	// Create a timer for the corpse to remain before removal
+	FTimerHandle CleanupTimer;
+	GetWorldTimerManager().SetTimer(
+		CleanupTimer,
+		this,
+		&AIG_EnemyCharacter::OnCorpseRemovalTimer,
+		DeathRemovalTime,
+		false
+	);
 }
 
 void AIG_EnemyCharacter::UpdatePath()

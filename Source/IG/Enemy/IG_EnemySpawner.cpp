@@ -66,9 +66,9 @@ void AIG_EnemySpawner::Spawn() {
         const FActorSpawnParameters SpawnInfo;
         AIG_EnemyCharacter* NewEnemy = Cast<AIG_EnemyCharacter>(GetWorld()->SpawnActor(EnemyBase, &SpawnTransform, SpawnInfo));
 
-    	// We need to let the new enemy know we are its parent spawner
-    	// When the enemy dies, it will inform us so we can remove it from the collection
-        NewEnemy->SetParentSpawner(this);
+    	// Subscribe to enemy death so we can remove it's useless corpse
+    	NewEnemy->OnEnemyDeathDelegate.AddDynamic(this, &AIG_EnemySpawner::CleanupEnemy);
+    	
     	// Register the new enemy in our collection
         SpawnedEnemies.Push(NewEnemy);
     }
