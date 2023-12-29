@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "ToolContextInterfaces.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
@@ -62,12 +63,18 @@ void AIG_PlayerCharacter::BeginPlay()
 			// Cache the weapon
 			Weapon = Comp;
 		}
+		else if (Comp->GetFName() == FName("CharacterMesh0"))
+		{
+			// Cache player mesh & animator
+			PlayerMesh = Comp;
+			PlayerAnimator = Comp->GetAnimInstance();
+		}
 	}
 
 	// Cache vars
 	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
 	PlayerHud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
-	PlayerHealthBar = Cast<UIG_PlayerHealthBar>(PlayerHud->HealthBarWidgetInstance);
+ 	PlayerHealthBar = Cast<UIG_PlayerHealthBar>(PlayerHud->HealthBarWidgetInstance);
 }
 
 // Called every frame
@@ -84,11 +91,36 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 	// Get location under the mouse cursor
 	FHitResult HitResult;
 	PlayerController->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), false, HitResult);
-
 	if (HitResult.IsValidBlockingHit())
 	{
 		// Rotate the player towards the cursor
 		PlayerController->SetControlRotation((HitResult.ImpactPoint - GetActorLocation()).Rotation());		
+	}
+
+	// Run hit detection if we are attacking
+	if (IsAttacking)
+	{
+		// If we hit something
+		if (const auto HitActor = DoHitDetection())
+		{
+			// Check if the actor is already in the list
+			if (ActorsToIgnore.Find(HitActor) == INDEX_NONE)
+			{
+				// If not, add it to the list for next time
+				ActorsToIgnore.AddUnique(Cast<AActor>(HitActor));
+				
+				UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitActor->GetName()));
+
+				// Apply the damage to the hit enemy
+				UGameplayStatics::ApplyDamage(
+					HitActor,
+					PlayerDamage,
+					GetController(),
+					this,
+					UDamageType::StaticClass()
+				);
+			}
+		}
 	}
 }
 
@@ -104,6 +136,7 @@ void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		EnhancedInputComponent->BindAction(InputActionMove, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnMove);
 		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnSprintStart);
 		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Completed, this, &AIG_PlayerCharacter::OnSprintEnd);
+		EnhancedInputComponent->BindAction(InputActionAttack, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnAttackInput);
 	}
 	else
 	{
@@ -128,7 +161,7 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
             GetWorld(),
             StartLocation,
             EndLocation,
-            20.f, // Seems a reasonable size for the mesh
+            20.f, // Seems a reasonable diameter for trace capsule
             ObjectTypes,
             false,
             ActorsToIgnore,		// Our dynamic ignore list
@@ -146,26 +179,8 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 	    return {};
     }
 	
-    // Get the actor that was hit
-    const auto HitActor = HitResult.GetActor();
-
-    // Check if the actor is already in the list
-    if (ActorsToIgnore.Find(HitActor) == INDEX_NONE)
-    {
-    	// If not, add it to the list for next time
-    	ActorsToIgnore.AddUnique(HitResult.GetActor());
-
-    	// Get the enemy character and log name
-    	AIG_EnemyCharacter* Enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
-    	UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
-
-		// TODO: Damage is applied in the BP currently
-    	
-    	return Enemy;
-    }
-
-	// Return nullptr it we hit nothing
-    return {};
+    // return the actor that was hit
+    return Cast<AIG_EnemyCharacter>(HitResult.GetActor());
 }
 
 void AIG_PlayerCharacter::ClearHitDetection() {
@@ -238,4 +253,32 @@ void AIG_PlayerCharacter::OnSprintEnd(const FInputActionValue& Value)
 {
 	// Return to regular speed
 	GetCharacterMovement()->MaxWalkSpeed = DefaultPlayerMoveSpeed;
+}
+
+void AIG_PlayerCharacter::OnAttackInput(const FInputActionValue& Value)
+{
+	// Bail out if already attacking
+	if (IsAttacking)
+	{
+		return;
+	}
+	
+	// Clear the previous hit records
+	ClearHitDetection();
+	
+	// Setup the attack montage
+	const float MontageLength = PlayerAnimator->Montage_Play(
+		AttackAnimMontage,
+		1.0f,
+		EMontagePlayReturnType::MontageLength,
+		0.f
+	);
+
+	// If the montage is valid
+	if (MontageLength > 0.f)
+	{
+		// Bind callbacks
+		PlayerAnimator->OnPlayMontageNotifyBegin.AddDynamic(this, &AIG_PlayerCharacter::OnAttackStart);
+		PlayerAnimator->OnPlayMontageNotifyEnd.AddDynamic  (this, &AIG_PlayerCharacter::OnAttackEnd);
+	}
 }

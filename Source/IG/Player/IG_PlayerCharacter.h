@@ -42,8 +42,12 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float DefaultPlayerMoveSpeed = 0.0f;
 
+	// Attacking state
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	bool IsAttacking{false};
+	
 	/**
-	 * Run hit detection on the mace head
+	 * Run hit detection on the weapon
 	 * @return The enemy that was hit (or nullptr for no hit)
 	 */
 	UFUNCTION(BlueprintCallable)
@@ -78,6 +82,12 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UInputAction* InputActionSprint{nullptr};
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UInputAction* InputActionAttack{nullptr};
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UAnimMontage* AttackAnimMontage{nullptr};
 	
 	// Array of actors to ignore from hit detections
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -87,12 +97,28 @@ protected:
 	void OnMove(const FInputActionValue& Value);
 	void OnSprintStart(const FInputActionValue& Value);
 	void OnSprintEnd(const FInputActionValue& Value);
+	void OnAttackInput(const FInputActionValue& Value);
+
+	// Callbacks for anim montage
+	UFUNCTION()
+	void OnAttackStart(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointNotifyPayload)
+	{
+		IsAttacking = true;
+	}
+
+	UFUNCTION()
+	void OnAttackEnd(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointNotifyPayload)
+	{
+		IsAttacking = false;
+	}
 
 	// Cache vars
 	TObjectPtr<APlayerController>		PlayerController{nullptr};
+	TObjectPtr<USkeletalMeshComponent>	PlayerMesh{nullptr};
 	TObjectPtr<USkeletalMeshComponent>	Weapon{nullptr};
 	TObjectPtr<AIG_GameMode>			GameMode{nullptr};
 	TObjectPtr<AIG_PlayerHud>			PlayerHud{nullptr};
 	TObjectPtr<UIG_PlayerHealthBar>		PlayerHealthBar{nullptr};
+	TObjectPtr<UAnimInstance>			PlayerAnimator{nullptr};
 
 };
