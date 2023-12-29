@@ -37,7 +37,11 @@ protected:
 	FVector							PlayerLocation{};
 
 	// Check if we are in attack range of the player
-	bool InAttackRange() const;
+	bool InAttackRange() const
+	{
+		return FVector::Distance(GetActorLocation(), PlayerLocation) <= AttackRange;
+	}
+	
 	// Update the navigation target
 	void UpdatePath();
 

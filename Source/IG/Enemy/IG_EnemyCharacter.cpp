@@ -60,7 +60,8 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 
 		return;
 	}
-	
+
+	// TODO: get the enemy health bar to work as a child of the enemy
 	// Check if we can project to the screen (only works if enemy is within camera view)
 	if (FVector2d ScreenPos; PlayerController->ProjectWorldLocationToScreen(GetActorLocation(), ScreenPos))
 	{
@@ -190,15 +191,4 @@ void AIG_EnemyCharacter::UpdatePath()
 			AiController->RequestMove(Req, Path->GetPath());
 		}
 	}
-}
-
-bool AIG_EnemyCharacter::InAttackRange() const
-{
-	// Check if the enemy is within attack range of the player
-	if (FVector::Distance(GetActorLocation(), PlayerLocation) <= AttackRange)
-	{
-		return true;
-	}
-
-	return false;
 }
