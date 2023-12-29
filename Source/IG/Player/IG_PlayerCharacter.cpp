@@ -279,7 +279,7 @@ void AIG_PlayerCharacter::OnAttackInput(const FInputActionValue& Value)
 	if (MontageLength > 0.f)
 	{
 		// Bind callbacks
-		PlayerAnimator->OnPlayMontageNotifyBegin.AddDynamic(this, &AIG_PlayerCharacter::OnAttackStart);
-		PlayerAnimator->OnPlayMontageNotifyEnd.AddDynamic  (this, &AIG_PlayerCharacter::OnAttackEnd);
+		PlayerAnimator->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &AIG_PlayerCharacter::OnAttackStart);
+		PlayerAnimator->OnPlayMontageNotifyEnd.AddUniqueDynamic  (this, &AIG_PlayerCharacter::OnAttackEnd);
 	}
 }
