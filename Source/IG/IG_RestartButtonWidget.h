@@ -22,7 +22,8 @@ protected:
 	void ButtonPressed();
 	
 public:
+	// Instance of the button widget
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
-	UButton* Button;
+	TObjectPtr<UButton> Button;
 	
 };

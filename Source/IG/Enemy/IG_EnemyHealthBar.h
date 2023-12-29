@@ -7,6 +7,8 @@
 #include "Components/ProgressBar.h"
 #include "IG_EnemyHealthBar.generated.h"
 
+class AIG_EnemyCharacter;
+
 /**
  * 
  */
@@ -15,7 +17,9 @@ class IG_API UIG_EnemyHealthBar : public UUserWidget
 {
 	GENERATED_BODY()
 
-public:
+	friend class AIG_EnemyCharacter;
+
+protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
-	UProgressBar* HealthBar;
+	TObjectPtr<UProgressBar> HealthBar;
 };

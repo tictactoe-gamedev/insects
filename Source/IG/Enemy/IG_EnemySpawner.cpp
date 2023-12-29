@@ -13,8 +13,11 @@ AIG_EnemySpawner::AIG_EnemySpawner()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// The area we will be spawning in
     CollisionMesh = CreateDefaultSubobject<UBoxComponent>(FName("Spawn Volume"));
-    CollisionMesh->SetBoxExtent(FVector(32.f, 32.f, 32.f));
+	// These are the defaults you get when you create a box collider so might as well use them here too
+	const FVector DefaultExtents{32.f, 32.f, 32.f}; 
+    CollisionMesh->SetBoxExtent(DefaultExtents);
     SetRootComponent(CollisionMesh);
 }
 
@@ -22,6 +25,9 @@ AIG_EnemySpawner::AIG_EnemySpawner()
 void AIG_EnemySpawner::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Cache frequent flyers
+	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
 }
 
 // Called every frame
@@ -29,13 +35,16 @@ void AIG_EnemySpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	// Skip if it's game over
 	if (!GameMode->GetGameOver())
 	{
+		// Check the spawn timer
 		if (SpawnTimeCurrent > SpawnTimer) {
+			// Spawn enemy & reset timer
 			Spawn();
 			SpawnTimeCurrent = 0;
 		} else {
+			// Advance the timer
 			SpawnTimeCurrent += DeltaTime;
 		}
 	}
@@ -43,23 +52,34 @@ void AIG_EnemySpawner::Tick(float DeltaTime)
 
 void AIG_EnemySpawner::Spawn() {
 
-    if (spawned_enemies.Num() < MaxEnemies) {
-        FVector spawn_pos = UKismetMathLibrary::RandomPointInBoundingBox(GetActorLocation(), CollisionMesh->GetScaledBoxExtent());
-        FTransform spawn_transform = FTransform(FRotator(0.f), spawn_pos, FVector(1.f));
-        FActorSpawnParameters spawn_info;
-        AIG_EnemyCharacter* new_enemy = Cast<AIG_EnemyCharacter>(GetWorld()->SpawnActor(EnemyBase, &spawn_transform, spawn_info));
-        
-        new_enemy->spawner = this;
-        spawned_enemies.Push(new_enemy);
+	// Check we haven't spawned our max number of enemies
+    if (SpawnedEnemies.Num() < MaxEnemies) {
+    	// Get a random position inside our box volume
+        const FVector SpawnPos = UKismetMathLibrary::RandomPointInBoundingBox(GetActorLocation(), CollisionMesh->GetScaledBoxExtent());
+    	// Set a basic transform
+        const FTransform SpawnTransform = FTransform(FRotator(0.f), SpawnPos, FVector(1.f));
+    	// We have no special parameters
+        const FActorSpawnParameters SpawnInfo;
+        AIG_EnemyCharacter* NewEnemy = Cast<AIG_EnemyCharacter>(GetWorld()->SpawnActor(EnemyBase, &SpawnTransform, SpawnInfo));
+
+    	// We need to let the new enemy know we are its parent spawner
+    	// When the enemy dies, it will inform us so we can remove it from the collection
+        NewEnemy->SetParentSpawner(this);
+    	// Register the new enemy in our collection
+        SpawnedEnemies.Push(NewEnemy);
     }
 }
 
-void AIG_EnemySpawner::CleanupEnemy(AIG_EnemyCharacter* enemy) {
+void AIG_EnemySpawner::CleanupEnemy(AIG_EnemyCharacter* Enemy) {
 
-    UE_LOG(LogTemp, Warning, TEXT("Cleaning up dead enemy: %s"), *(enemy->GetName()));
-    for (const auto stored_enemy : spawned_enemies) {
-        if (stored_enemy->GetName() == enemy->GetName()) {
-            spawned_enemies.Remove(stored_enemy);
+    UE_LOG(LogTemp, Warning, TEXT("Cleaning up dead enemy: %s"), *(Enemy->GetName()));
+
+	// Get the enemy from our collection
+    for (const auto StoredEnemy : SpawnedEnemies) {
+    	// TODO: Couldn't find a clean way to find the enemy in the array
+    	// By name was the best I could come up with. Might need to migrate to a map?
+        if (StoredEnemy->GetName() == Enemy->GetName()) {
+            SpawnedEnemies.Remove(StoredEnemy);
             break;
         }
     }

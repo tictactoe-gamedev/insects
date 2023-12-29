@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "IG_EnemyCharacter.generated.h"
 
+class AIG_GameMode;
 class AIG_EnemySpawner;
 class AIG_PlayerCharacter;
 
@@ -25,36 +26,35 @@ protected:
 	// Called when health reaches zero. Handles cleanup.
 	void Died();
 
-	// Pointer to the enemy healthbar
-	UUserWidget* HealthBarWidgetInstance{nullptr};
+	// Pointer to the enemy health bar
+	TObjectPtr<UUserWidget> HealthBarWidgetInstance{nullptr};
 
-	// Performs an attack against a playerg
-	UFUNCTION(BlueprintCallable)
-	void Attack(AIG_PlayerCharacter* player);
-	
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// Cache often-used vars
+	TObjectPtr<AIG_GameMode>		GameMode{nullptr};
+	TObjectPtr<APlayerController>	PlayerController{nullptr};
+	TObjectPtr<APawn>				PlayerPawn{nullptr};
+	TObjectPtr<AIG_PlayerCharacter> PlayerCharacter{nullptr};
+	FVector							PlayerLocation{};
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// Check if we are in attack range of the player
+	bool InAttackRange() const;
+	// Update the navigation target
+	void UpdatePath();
 
 	// Maximum enemy health
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int MaxHealth;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int MaxHealth{100};
 
 	// Current enemy health
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int CurrentHealth;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int CurrentHealth{100};
 
 	// The spawner responsible for this enemy
-	AIG_EnemySpawner* spawner;
-	
-	// Causes the enemy to take damage
-	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
+	TObjectPtr<AIG_EnemySpawner> ParentSpawner;
 
 	// The health bar UI BP to use
-	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> HealthBarWidget;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> HealthBarWidget;
 
 	// How close to attempt to get to the target
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -79,4 +79,20 @@ public:
 	// Timer for removal on death
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float DeathRemovalTime = 3.f;
+	
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	// Causes the enemy to take damage
+	virtual float TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) override;
+
+	// Allow the spawner to let the enemy know who it is
+	void SetParentSpawner(AIG_EnemySpawner* Spawner)
+	{
+		ParentSpawner = Spawner;
+	}
 };

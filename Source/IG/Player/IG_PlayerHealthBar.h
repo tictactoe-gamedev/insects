@@ -17,6 +17,6 @@ class IG_API UIG_PlayerHealthBar : public UUserWidget
 	
 public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
-	UProgressBar* HealthBar;
+	TObjectPtr<UProgressBar> HealthBar;
 	
 };

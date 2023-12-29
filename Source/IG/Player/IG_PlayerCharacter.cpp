@@ -40,12 +40,34 @@ void AIG_PlayerCharacter::BeginPlay()
 
 		// Enable mouse cursor
 		PlayerController->SetShowMouseCursor(true);
+
+		// Set the default walk speed
 		DefaultPlayerMoveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	}
 	else
 	{
 		UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire player controller"));
+		return;
 	}
+
+	// Locate our weapon in the actor tree
+	TArray<USkeletalMeshComponent*> Components;
+	GetComponents<USkeletalMeshComponent>(Components, true);
+	
+	for (USkeletalMeshComponent * Comp : Components)
+	{
+		// Getting by name isn't perfect but navigating this stuff is hard :D
+		if (Comp->GetFName() == FName("sword"))
+		{
+			// Cache the weapon
+			Weapon = Comp;
+		}
+	}
+
+	// Cache vars
+	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	PlayerHud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
+	PlayerHealthBar = Cast<UIG_PlayerHealthBar>(PlayerHud->HealthBarWidgetInstance);
 }
 
 // Called every frame
@@ -53,16 +75,19 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Skip ticks if dead
 	if (Dead)
 	{
 		return;
 	}
-	
+
+	// Get location under the mouse cursor
 	FHitResult HitResult;
 	PlayerController->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), false, HitResult);
 
 	if (HitResult.IsValidBlockingHit())
 	{
+		// Rotate the player towards the cursor
 		PlayerController->SetControlRotation((HitResult.ImpactPoint - GetActorLocation()).Rotation());		
 	}
 }
@@ -71,33 +96,26 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
-	auto EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+
+	// Setup enhanced input
+	auto EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
 		EnhancedInputComponent->BindAction(InputActionMove, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnMove);
 		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Triggered, this, &AIG_PlayerCharacter::OnSprintStart);
 		EnhancedInputComponent->BindAction(InputActionSprint, ETriggerEvent::Completed, this, &AIG_PlayerCharacter::OnSprintEnd);
 	}
+	else
+	{
+		UE_LOG(LogInput, Error, TEXT("Error configuring input system"));
+	}
 }
 
 AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 
-	FVector start_location;
-	FVector end_location;
-
-	TArray<USkeletalMeshComponent*> components;
-	GetComponents<USkeletalMeshComponent>(components, true);
-	
-	for (USkeletalMeshComponent * Comp : components)
-	{
-		if (Comp->GetFName() == FName("sword"))
-		{
-			start_location =  Comp->GetSocketLocation("WeaponStart");
-			end_location = Comp->GetSocketLocation("WeaponEnd");
-			break;
-		}
-	}
+	// Locate ends of the weapon
+	FVector StartLocation = Weapon->GetSocketLocation("WeaponStart");
+	FVector EndLocation = Weapon->GetSocketLocation("WeaponEnd");
 
 	// Generate array of object types to hit
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -106,15 +124,15 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
 
 	// Fire the collision trace
     FHitResult HitResult = FHitResult(ForceInit);
-    bool hit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+    bool Hit = UKismetSystemLibrary::SphereTraceSingleForObjects(
             GetWorld(),
-            start_location,
-            end_location,
-            20.f,
+            StartLocation,
+            EndLocation,
+            20.f, // Seems a reasonable size for the mesh
             ObjectTypes,
             false,
             ActorsToIgnore,		// Our dynamic ignore list
-            EDrawDebugTrace::Type::None, // ForDuration
+            EDrawDebugTrace::Type::None, // Use EDrawDebugTrace::Type::ForDuration for debugging
             HitResult,
             true,
             FLinearColor(255,0,0,255),
@@ -122,29 +140,32 @@ AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
             1.f
             );
 
-    if (hit)
+	// Early return if we didn't hit anything
+    if (!Hit)
     {
-    	// Get the actor that was hit
-    	auto hit_actor = HitResult.GetActor();
+	    return {};
+    }
+	
+    // Get the actor that was hit
+    const auto HitActor = HitResult.GetActor();
 
-    	// Check if the actor is already in the list
-    	if (ActorsToIgnore.Find(hit_actor) == INDEX_NONE)
-    	{
-    		// If not, add it to the list for next time
-    		ActorsToIgnore.AddUnique(HitResult.GetActor());
+    // Check if the actor is already in the list
+    if (ActorsToIgnore.Find(HitActor) == INDEX_NONE)
+    {
+    	// If not, add it to the list for next time
+    	ActorsToIgnore.AddUnique(HitResult.GetActor());
 
-    		// Get the enemy character and log name
-    		AIG_EnemyCharacter* enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
-    		UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
+    	// Get the enemy character and log name
+    	AIG_EnemyCharacter* Enemy = Cast<AIG_EnemyCharacter>(HitResult.GetActor());
+    	UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitResult.GetActor()->GetName()));
 
-			// Damage is applied in the BP currently
-    		
-    		return enemy;
-    	}
+		// TODO: Damage is applied in the BP currently
+    	
+    	return Enemy;
     }
 
 	// Return nullptr it we hit nothing
-    return nullptr;
+    return {};
 }
 
 void AIG_PlayerCharacter::ClearHitDetection() {
@@ -154,12 +175,12 @@ void AIG_PlayerCharacter::ClearHitDetection() {
     ActorsToIgnore.Push(this);
 }
 
-float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) {
+float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) {
 
 	UE_LOG(LogTemp, Warning, TEXT("Player took %.2f damage"), Damage);
 	
 	// Grab initial health
-	int initial_health = CurrentHealth;
+	const int InitialHealth = CurrentHealth;
 
 	// Calculate the result of the damage to the enemy health
 	CurrentHealth = std::clamp(CurrentHealth - static_cast<int>(Damage), 0, MaxHealth);
@@ -169,29 +190,21 @@ float AIG_PlayerCharacter::TakeDamage(float Damage, FDamageEvent const & DamageE
 		UE_LOG(LogTemp, Warning, TEXT("Player died"), Damage);
 		Dead = true;
 
-		// TODO: inform the gamemode that it's a gameover
-		auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+		// inform the gamemode that it's a gameover
 		GameMode->SetGameOver();
 	}
-
-	// Grab the healbar from the gamemode
-	AIG_PlayerHud* hud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
-	if (hud)
-	{
-		auto healthbar = Cast<UIG_PlayerHealthBar>(hud->HealthBarWidgetInstance);
-		if (healthbar)
-		{
-			// Calc and send the new percentage to the health bar
-			float bar_percent = static_cast<float>(CurrentHealth) / static_cast<float>(MaxHealth);
-			healthbar->HealthBar->SetPercent(bar_percent);
-		}
-	}
-
-	return (CurrentHealth - initial_health);
+	
+	// Calc and send the new percentage to the health bar
+	const float BarPercent = static_cast<float>(CurrentHealth) / static_cast<float>(MaxHealth);
+	PlayerHealthBar->HealthBar->SetPercent(BarPercent);
+	
+	// Return the difference (damage done);
+	return (CurrentHealth - InitialHealth);
 }
 
 void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 {
+	// Can't move if you're dead
 	if (Dead)
 	{
 		return;
@@ -203,6 +216,7 @@ void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 	// Attempt to normalize
 	if (MoveVector.Normalize())
 	{
+		// Apply movement
 		AddMovementInput(MoveVector, 1.f);
 	}
 	else
@@ -213,12 +227,15 @@ void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 
 void AIG_PlayerCharacter::OnSprintStart(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Sprint start"));
+	// TODO This will get called constantly while sprint key is down
+	// Couldn't find a way to get the input to fire once on down and once on up
+
+	// Apply sprint modifier to speed
 	GetCharacterMovement()->MaxWalkSpeed = DefaultPlayerMoveSpeed * SprintModifier;
 }
 
 void AIG_PlayerCharacter::OnSprintEnd(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Sprint end"));
+	// Return to regular speed
 	GetCharacterMovement()->MaxWalkSpeed = DefaultPlayerMoveSpeed;
 }

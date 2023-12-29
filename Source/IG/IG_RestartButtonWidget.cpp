@@ -7,13 +7,13 @@
 void UIG_RestartButtonWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	
+	// Register callback for button press
 	Button->OnReleased.AddDynamic(this, &UIG_RestartButtonWidget::ButtonPressed);
 }
 
 void UIG_RestartButtonWidget::ButtonPressed()
 {
-	auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
+	const auto GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
 	GameMode->RestartGame();
 }

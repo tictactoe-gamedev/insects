@@ -16,7 +16,8 @@ class IG_API UIG_PlayerScoreWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	// The actual text widget
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
-	UTextBlock* TextBlock;
+	TObjectPtr<UTextBlock> TextBlock;
 	
 };

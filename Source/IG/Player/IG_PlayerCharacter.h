@@ -2,11 +2,15 @@
 
 #pragma once
 
-#include "../Enemy/IG_EnemyCharacter.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "EnhancedInputSubsystems.h"
+
+#include "../Enemy/IG_EnemyCharacter.h"
 #include "IG_PlayerCharacter.generated.h"
+
+class UIG_PlayerHealthBar;
+class AIG_PlayerHud;
 
 UCLASS()
 class IG_API AIG_PlayerCharacter : public ACharacter
@@ -17,28 +21,26 @@ public:
 	// Sets default values for this character's properties
 	AIG_PlayerCharacter();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/**
-	 * The amount of damage the player will deal
-	 */
+	// Callback for receiving damage
+	virtual float TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) override;
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+	// The amount of damage the player will deal
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float PlayerDamage = 20.f;
 	
-	/**
-     * Movement speed of the player
-     */
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float DefaultPlayerMoveSpeed = 0.0f;
+	// Movement speed of the player
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float DefaultPlayerMoveSpeed = 0.0f;
 
 	/**
 	 * Run hit detection on the mace head
@@ -46,24 +48,18 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	AIG_EnemyCharacter* DoHitDetection();
-
-	/**
-	 * Clear contact history
-	 */
+	
+	// Clear contact history for hits
 	UFUNCTION(BlueprintCallable)
-    void ClearHitDetection();
-
-	/**
-	 * Maximum health of the player
-	 */
+	void ClearHitDetection();
+	
+	// Maximum health of the player 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int MaxHealth = 100;
-
-	/**
-	 * Current health of the player
-	 */
+	int MaxHealth = 100;
+	
+	//Current health of the player 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int CurrentHealth = 100;
+	int CurrentHealth = 100;
 
 	// Player is dead
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -73,8 +69,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float SprintModifier = 2.0f;
 
-	float TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser);
-
+	// Input context and action assignments
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UInputMappingContext* InputContext{nullptr};
 	
@@ -83,16 +78,21 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UInputAction* InputActionSprint{nullptr};
-protected:
-	/**
-	 * Array of actors to ignore from hit detections
-	 */
+	
+	// Array of actors to ignore from hit detections
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    TArray<AActor*> ActorsToIgnore;
+	TArray<AActor*> ActorsToIgnore{};
 
+	// Callbacks for inputs
 	void OnMove(const FInputActionValue& Value);
 	void OnSprintStart(const FInputActionValue& Value);
 	void OnSprintEnd(const FInputActionValue& Value);
 
-	APlayerController* PlayerController{nullptr};
+	// Cache vars
+	TObjectPtr<APlayerController>		PlayerController{nullptr};
+	TObjectPtr<USkeletalMeshComponent>	Weapon{nullptr};
+	TObjectPtr<AIG_GameMode>			GameMode{nullptr};
+	TObjectPtr<AIG_PlayerHud>			PlayerHud{nullptr};
+	TObjectPtr<UIG_PlayerHealthBar>		PlayerHealthBar{nullptr};
+
 };
