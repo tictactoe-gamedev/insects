@@ -51,6 +51,6 @@ void AIG_GameMode::HudReady()
 void AIG_GameMode::PlayerDied()
 {
 	// Register the gameover state
-	GameOver = true;
+	bIsGameOver = true;
 	PlayerHud->ShowRestartButton();
 }

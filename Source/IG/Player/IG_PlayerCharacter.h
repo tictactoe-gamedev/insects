@@ -49,7 +49,7 @@ protected:
 
 	// Attacking state
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool IsAttacking{false};
+	bool bIsAttacking{false};
 	
 	/**
 	 * Run hit detection on the weapon
@@ -72,7 +72,7 @@ protected:
 
 	// Player is dead
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool Dead = false;
+	bool bIsDead = false;
 
 	// Multiplier for sprint speed
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -108,13 +108,13 @@ protected:
 	UFUNCTION()
 	void OnAttackStart(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointNotifyPayload)
 	{
-		IsAttacking = true;
+		bIsAttacking = true;
 	}
 
 	UFUNCTION()
 	void OnAttackEnd(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointNotifyPayload)
 	{
-		IsAttacking = false;
+		bIsAttacking = false;
 	}
 
 	// Cache vars

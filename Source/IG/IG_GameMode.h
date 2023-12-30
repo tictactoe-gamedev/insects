@@ -35,7 +35,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsGameOver()
 	{
-		return GameOver;
+		return bIsGameOver;
 	}
 
 	// Callback for player death delegate
@@ -49,7 +49,7 @@ protected:
 
 	// Track if gameover has occurred
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool GameOver{false};
+	bool bIsGameOver{false};
 
 	// Cache vars
 	TObjectPtr<AIG_PlayerHud> PlayerHud{nullptr};

@@ -4,3 +4,4 @@
 
 #include "CoreMinimal.h"
 
+// TODO: Create a new base class for Player and Enemy to derive from

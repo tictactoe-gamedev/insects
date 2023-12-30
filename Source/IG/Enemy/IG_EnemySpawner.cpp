@@ -44,13 +44,12 @@ void AIG_EnemySpawner::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	// Check the spawn timer
-	if (SpawnTimeCurrent > SpawnTimer) {
+	SpawnTimeCurrent += DeltaTime;
+	if (SpawnTimeCurrent > SpawnTimer)
+	{
 		// Spawn enemy & reset timer
 		Spawn();
 		SpawnTimeCurrent = 0;
-	} else {
-		// Advance the timer
-		SpawnTimeCurrent += DeltaTime;
 	}
 }
 
@@ -78,13 +77,9 @@ void AIG_EnemySpawner::CleanupEnemy(AIG_EnemyCharacter* Enemy) {
 
     UE_LOG(LogTemp, Warning, TEXT("Cleaning up dead enemy: %s"), *(Enemy->GetName()));
 
-	// Get the enemy from our collection
-    for (const auto StoredEnemy : SpawnedEnemies) {
-    	// TODO: Couldn't find a clean way to find the enemy in the array
-    	// By name was the best I could come up with. Might need to migrate to a map?
-        if (StoredEnemy->GetName() == Enemy->GetName()) {
-            SpawnedEnemies.Remove(StoredEnemy);
-            break;
-        }
-    }
+    // Turns out this does work. I have no idea why but when
+    // I tried it initially, I had issues.
+    SpawnedEnemies.Remove(Enemy);
+
+    // Leaving it like this for now just in case we need to extend this
 }

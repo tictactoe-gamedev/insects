@@ -8,15 +8,13 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "EnhancedInputComponent.h"
-#include "ToolContextInterfaces.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AIG_PlayerCharacter::AIG_PlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -26,36 +24,32 @@ void AIG_PlayerCharacter::BeginPlay()
 
 	// Configure the player controller
 	PlayerController = Cast<APlayerController>(GetController());
-	if (PlayerController)
-	{
-		auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-		if (Subsystem)
-		{
-			// Assign input map
-			Subsystem->AddMappingContext(InputContext, 0);
-		}
-		else
-		{
-			UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire local player input subsystem"));
-		}
-
-		// Enable mouse cursor
-		PlayerController->SetShowMouseCursor(true);
-
-		// Set the default walk speed
-		DefaultPlayerMoveSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	}
-	else
+	if (PlayerController == nullptr)
 	{
 		UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire player controller"));
 		return;
 	}
+	const auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+	if (Subsystem == nullptr)
+	{
+		UE_LOG(LogPlayerController, Error, TEXT("Failed to acquire local player input subsystem"));
+		return;
+	}
+
+	// Assign input map
+	Subsystem->AddMappingContext(InputContext, 0);
+
+	// Enable mouse cursor
+	PlayerController->SetShowMouseCursor(true);
+
+	// Set the default walk speed
+	DefaultPlayerMoveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	// Locate our weapon in the actor tree
 	TArray<USkeletalMeshComponent*> Components;
 	GetComponents<USkeletalMeshComponent>(Components, true);
-	
-	for (USkeletalMeshComponent * Comp : Components)
+
+	for (USkeletalMeshComponent* Comp : Components)
 	{
 		// Getting by name isn't perfect but navigating this stuff is hard :D
 		if (Comp->GetFName() == FName("sword"))
@@ -74,7 +68,7 @@ void AIG_PlayerCharacter::BeginPlay()
 	// Cache vars
 	GameMode = Cast<AIG_GameMode>(GetWorld()->GetAuthGameMode());
 	PlayerHud = Cast<AIG_PlayerHud>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
- 	PlayerHealthBar = Cast<UIG_PlayerHealthBar>(PlayerHud->HealthBarWidgetInstance);
+	PlayerHealthBar = Cast<UIG_PlayerHealthBar>(PlayerHud->HealthBarWidgetInstance);
 }
 
 // Called every frame
@@ -82,45 +76,38 @@ void AIG_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Skip ticks if dead
-	if (Dead)
-	{
-		return;
-	}
-
 	// Get location under the mouse cursor
 	FHitResult HitResult;
 	PlayerController->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), false, HitResult);
 	if (HitResult.IsValidBlockingHit())
 	{
 		// Rotate the player towards the cursor
-		PlayerController->SetControlRotation((HitResult.ImpactPoint - GetActorLocation()).Rotation());		
+		PlayerController->SetControlRotation((HitResult.ImpactPoint - GetActorLocation()).Rotation());
 	}
 
-	// Run hit detection if we are attacking
-	if (IsAttacking)
+	// Need go no further unless we're attacking
+	if (!bIsAttacking)
 	{
-		// If we hit something
-		if (const auto HitActor = DoHitDetection())
-		{
-			// Check if the actor is already in the list
-			if (ActorsToIgnore.Find(HitActor) == INDEX_NONE)
-			{
-				// If not, add it to the list for next time
-				ActorsToIgnore.AddUnique(Cast<AActor>(HitActor));
-				
-				UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitActor->GetName()));
+		return;
+	}
 
-				// Apply the damage to the hit enemy
-				UGameplayStatics::ApplyDamage(
-					HitActor,
-					PlayerDamage,
-					GetController(),
-					this,
-					UDamageType::StaticClass()
-				);
-			}
-		}
+	// Perform hit detection and check if actor was alread hit this attack
+	AIG_EnemyCharacter* HitActor = DoHitDetection();
+	if (HitActor && (ActorsToIgnore.Find(HitActor) == INDEX_NONE))
+	{
+		// If not, add it to the list for next time
+		ActorsToIgnore.AddUnique(Cast<AActor>(HitActor));
+
+		UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(HitActor->GetName()));
+
+		// Apply the damage to the hit enemy
+		UGameplayStatics::ApplyDamage(
+			HitActor,
+			PlayerDamage,
+			GetController(),
+			this,
+			UDamageType::StaticClass()
+		);
 	}
 }
 
@@ -144,56 +131,57 @@ void AIG_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	}
 }
 
-AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection() {
-
+AIG_EnemyCharacter* AIG_PlayerCharacter::DoHitDetection()
+{
 	// Locate ends of the weapon
 	FVector StartLocation = Weapon->GetSocketLocation("WeaponStart");
 	FVector EndLocation = Weapon->GetSocketLocation("WeaponEnd");
 
 	// Generate array of object types to hit
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Reserve(1);
-    ObjectTypes.Emplace(ECollisionChannel::ECC_Pawn);
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Reserve(1);
+	ObjectTypes.Emplace(ECollisionChannel::ECC_Pawn);
 
 	// Fire the collision trace
-    FHitResult HitResult = FHitResult(ForceInit);
-    bool Hit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-            GetWorld(),
-            StartLocation,
-            EndLocation,
-            20.f, // Seems a reasonable diameter for trace capsule
-            ObjectTypes,
-            false,
-            ActorsToIgnore,		// Our dynamic ignore list
-            EDrawDebugTrace::Type::None, // Use EDrawDebugTrace::Type::ForDuration for debugging
-            HitResult,
-            true,
-            FLinearColor(255,0,0,255),
-            FLinearColor(0,255,0,255),
-            1.f
-            );
+	FHitResult HitResult = FHitResult(ForceInit);
+	bool Hit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		StartLocation,
+		EndLocation,
+		20.f, // Seems a reasonable diameter for trace capsule
+		ObjectTypes,
+		false,
+		ActorsToIgnore, // Our dynamic ignore list
+		EDrawDebugTrace::Type::None, // Use EDrawDebugTrace::Type::ForDuration for debugging
+		HitResult,
+		true,
+		FLinearColor(255, 0, 0, 255),
+		FLinearColor(0, 255, 0, 255),
+		1.f
+	);
 
 	// Early return if we didn't hit anything
-    if (!Hit)
-    {
-	    return {};
-    }
-	
-    // return the actor that was hit
-    return Cast<AIG_EnemyCharacter>(HitResult.GetActor());
+	if (!Hit)
+	{
+		return {};
+	}
+
+	// return the actor that was hit
+	return Cast<AIG_EnemyCharacter>(HitResult.GetActor());
 }
 
-void AIG_PlayerCharacter::ClearHitDetection() {
+void AIG_PlayerCharacter::ClearHitDetection()
+{
 	// Reset the ignored list
-    ActorsToIgnore.Empty();
+	ActorsToIgnore.Empty();
 	// Add self always
-    ActorsToIgnore.Push(this);
+	ActorsToIgnore.Push(this);
 }
 
-float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser) {
-
+float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
 	UE_LOG(LogTemp, Warning, TEXT("Player took %.2f damage"), Damage);
-	
+
 	// Grab initial health
 	const int InitialHealth = CurrentHealth;
 
@@ -201,19 +189,22 @@ float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const & D
 	CurrentHealth = std::clamp(CurrentHealth - static_cast<int>(Damage), 0, MaxHealth);
 
 	// Don't kill the player, just print a message
-	if (CurrentHealth == 0) {
+	if (CurrentHealth == 0)
+	{
 		UE_LOG(LogTemp, Warning, TEXT("Player died"), Damage);
-		Dead = true;
+		bIsDead = true;
+
+		// Deactivate oureslves
+		SetActorTickEnabled(false);
 
 		// broadcast to delegates that we died
 		OnPlayerDeathDelegate.Broadcast();
-		
 	}
-	
+
 	// Calc and send the new percentage to the health bar
 	const float BarPercent = static_cast<float>(CurrentHealth) / static_cast<float>(MaxHealth);
 	PlayerHealthBar->HealthBar->SetPercent(BarPercent);
-	
+
 	// Return the difference (damage done);
 	return (CurrentHealth - InitialHealth);
 }
@@ -221,11 +212,11 @@ float AIG_PlayerCharacter::TakeDamage(const float Damage, FDamageEvent const & D
 void AIG_PlayerCharacter::OnMove(const FInputActionValue& Value)
 {
 	// Can't move if you're dead
-	if (Dead)
+	if (bIsDead)
 	{
 		return;
 	}
-	
+
 	// Get the movement vector from the action
 	FVector MoveVector = Value.Get<FVector>();
 
@@ -259,14 +250,14 @@ void AIG_PlayerCharacter::OnSprintEnd(const FInputActionValue& Value)
 void AIG_PlayerCharacter::OnAttackInput(const FInputActionValue& Value)
 {
 	// Bail out if already attacking
-	if (IsAttacking)
+	if (bIsAttacking)
 	{
 		return;
 	}
-	
+
 	// Clear the previous hit records
 	ClearHitDetection();
-	
+
 	// Setup the attack montage
 	const float MontageLength = PlayerAnimator->Montage_Play(
 		AttackAnimMontage,
@@ -280,6 +271,6 @@ void AIG_PlayerCharacter::OnAttackInput(const FInputActionValue& Value)
 	{
 		// Bind callbacks
 		PlayerAnimator->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &AIG_PlayerCharacter::OnAttackStart);
-		PlayerAnimator->OnPlayMontageNotifyEnd.AddUniqueDynamic  (this, &AIG_PlayerCharacter::OnAttackEnd);
+		PlayerAnimator->OnPlayMontageNotifyEnd.AddUniqueDynamic(this, &AIG_PlayerCharacter::OnAttackEnd);
 	}
 }

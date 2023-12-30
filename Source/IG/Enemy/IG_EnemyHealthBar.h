@@ -17,6 +17,7 @@ class IG_API UIG_EnemyHealthBar : public UUserWidget
 {
 	GENERATED_BODY()
 
+	// TODO: Convert health bar updates to use delegate subscription
 	friend class AIG_EnemyCharacter;
 
 protected:

@@ -72,21 +72,21 @@ void AIG_EnemyCharacter::Tick(float DeltaTime)
 	UpdatePath();
 
 	// Check if we are in range to attack
-	if (InAttackRange())
+	if (!InAttackRange())
 	{
-		// Check the attack cooldown timer
-		if (CurrentAttackTime >= AttackTime)
-		{
-			// Apply very simple generic damage
-			const FDamageEvent Dev;
-			PlayerCharacter->TakeDamage(AttackDamage, Dev, GetController(), this);
-			CurrentAttackTime = 0;
-		}
-		else
-		{
-			// Wait for the attack cooldown timer
-			CurrentAttackTime += DeltaTime;
-		}
+		return;
+	}
+
+	// Tick the timer
+	CurrentAttackTime += DeltaTime;
+
+	// Check the attack cooldown timer
+	if (CurrentAttackTime >= AttackTime)
+	{
+		// Apply very simple generic damage
+		const FDamageEvent Dev;
+		PlayerCharacter->TakeDamage(AttackDamage, Dev, GetController(), this);
+		CurrentAttackTime = 0;
 	}
 }
 
@@ -168,19 +168,21 @@ void AIG_EnemyCharacter::UpdatePath()
 		this
 	);
 
-	// If the path is valid
-	if (Path && Path->IsValid())
+	// Bail early f the path is invalid
+	if (!Path || !Path->IsValid())
 	{
-		// Configure settings for movement request
-		FAIMoveRequest Req;
-		Req.SetAcceptanceRadius(ChaseStopDistance); // Apply chase stop distance var
-		Req.SetUsePathfinding(true);
+		return;
+	}
 
-		AAIController* AiController = Cast<AAIController>(GetController());
-		if (AiController)
-		{
-			// Apple the movement request
-			AiController->RequestMove(Req, Path->GetPath());
-		}
+	// Configure settings for movement request
+	FAIMoveRequest Req;
+	Req.SetAcceptanceRadius(ChaseStopDistance); // Apply chase stop distance var
+	Req.SetUsePathfinding(true);
+
+	// Apply the movement request
+	AAIController* AiController = Cast<AAIController>(GetController());
+	if (AiController)
+	{
+		AiController->RequestMove(Req, Path->GetPath());
 	}
 }

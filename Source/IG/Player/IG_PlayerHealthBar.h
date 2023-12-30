@@ -14,6 +14,8 @@ UCLASS()
 class IG_API UIG_PlayerHealthBar : public UUserWidget
 {
 	GENERATED_BODY()
+
+	// TODO: Convert health bar updates to use delegate subscription
 	
 public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
