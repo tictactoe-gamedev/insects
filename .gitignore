@@ -1,5 +1,9 @@
 # Visual Studio 2015 user specific files
 .vs/
+.vsconfig
+
+# Jetbrains IDE specific files
+.idea/
 
 # Compiled Object files
 *.slo
@@ -72,3 +76,15 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Linux "backup" files
+*~
+
+# VSCode settings
+.vscode/
+
+# Linux based build things
+CMakeLists.txt
+
+# Rider/CLion default build directories
+cmake-build*/
